@@ -1,78 +1,122 @@
 #include <stdio.h>
 
 #define TAM 10
-#define NAVIO 3
-#define OCUPADO 3
+#define H 5 // Tamanho da matriz da habilidade (5x5)
 #define AGUA 0
+#define NAVIO 3
+#define AFETADO 5
 
-// Função auxiliar para verificar se posições estão livres
-int estaLivre(int tabuleiro[TAM][TAM], int linha[], int coluna[], int tamanho) {
-    for (int i = 0; i < tamanho; i++) {
-        if (tabuleiro[linha[i]][coluna[i]] != AGUA) {
-            return 0; // Ocupado
-        }
-    }
-    return 1; // Livre
-}
-
-// Função auxiliar para posicionar o navio
-void posicionarNavio(int tabuleiro[TAM][TAM], int linha[], int coluna[], int tamanho) {
-    for (int i = 0; i < tamanho; i++) {
-        tabuleiro[linha[i]][coluna[i]] = OCUPADO;
-    }
-}
-
-int main() {
-    int tabuleiro[TAM][TAM];
-
-    // Inicializar o tabuleiro com 0
+// Inicializa o tabuleiro 10x10 com água (0)
+void inicializarTabuleiro(int tabuleiro[TAM][TAM]) {
     for (int i = 0; i < TAM; i++) {
         for (int j = 0; j < TAM; j++) {
             tabuleiro[i][j] = AGUA;
         }
     }
+}
 
-    // Navio 1 - Horizontal (linha 1, colunas 2,3,4)
-    int navio1_linha[NAVIO] = {1, 1, 1};
-    int navio1_coluna[NAVIO] = {2, 3, 4};
+// Coloca navios fixos para exemplo
+void posicionarNavios(int tabuleiro[TAM][TAM]) {
+    // Horizontal
+    tabuleiro[2][3] = NAVIO;
+    tabuleiro[2][4] = NAVIO;
+    tabuleiro[2][5] = NAVIO;
 
-    if (estaLivre(tabuleiro, navio1_linha, navio1_coluna, NAVIO)) {
-        posicionarNavio(tabuleiro, navio1_linha, navio1_coluna, NAVIO);
+    // Vertical
+    tabuleiro[5][7] = NAVIO;
+    tabuleiro[6][7] = NAVIO;
+    tabuleiro[7][7] = NAVIO;
+}
+
+// Constrói uma matriz cone (forma de V invertido)
+void construirCone(int matriz[H][H]) {
+    for (int i = 0; i < H; i++) {
+        for (int j = 0; j < H; j++) {
+            if (j >= (H / 2 - i) && j <= (H / 2 + i)) {
+                matriz[i][j] = 1;
+            } else {
+                matriz[i][j] = 0;
+            }
+        }
     }
+}
 
-    // Navio 2 - Vertical (coluna 6, linhas 4,5,6)
-    int navio2_linha[NAVIO] = {4, 5, 6};
-    int navio2_coluna[NAVIO] = {6, 6, 6};
-
-    if (estaLivre(tabuleiro, navio2_linha, navio2_coluna, NAVIO)) {
-        posicionarNavio(tabuleiro, navio2_linha, navio2_coluna, NAVIO);
+// Constrói matriz cruz (linha e coluna central)
+void construirCruz(int matriz[H][H]) {
+    for (int i = 0; i < H; i++) {
+        for (int j = 0; j < H; j++) {
+            if (i == H / 2 || j == H / 2) {
+                matriz[i][j] = 1;
+            } else {
+                matriz[i][j] = 0;
+            }
+        }
     }
+}
 
-    // Navio 3 - Diagonal principal (linhas/colunas 0,1,2)
-    int navio3_linha[NAVIO] = {0, 1, 2};
-    int navio3_coluna[NAVIO] = {0, 1, 2};
-
-    if (estaLivre(tabuleiro, navio3_linha, navio3_coluna, NAVIO)) {
-        posicionarNavio(tabuleiro, navio3_linha, navio3_coluna, NAVIO);
+// Constrói matriz octaedro (forma de losango)
+void construirOctaedro(int matriz[H][H]) {
+    for (int i = 0; i < H; i++) {
+        for (int j = 0; j < H; j++) {
+            if (abs(i - H / 2) + abs(j - H / 2) <= H / 2) {
+                matriz[i][j] = 1;
+            } else {
+                matriz[i][j] = 0;
+            }
+        }
     }
+}
 
-    // Navio 4 - Diagonal secundária (linhas 7,8,9 / colunas 2,1,0)
-    int navio4_linha[NAVIO] = {7, 8, 9};
-    int navio4_coluna[NAVIO] = {2, 1, 0};
+// Aplica matriz de habilidade no tabuleiro em ponto (linha, coluna)
+void aplicarHabilidade(int tabuleiro[TAM][TAM], int matriz[H][H], int linha, int coluna) {
+    for (int i = 0; i < H; i++) {
+        for (int j = 0; j < H; j++) {
+            int tLinha = linha - H / 2 + i;
+            int tColuna = coluna - H / 2 + j;
 
-    if (estaLivre(tabuleiro, navio4_linha, navio4_coluna, NAVIO)) {
-        posicionarNavio(tabuleiro, navio4_linha, navio4_coluna, NAVIO);
+            // Verifica se está dentro dos limites
+            if (tLinha >= 0 && tLinha < TAM && tColuna >= 0 && tColuna < TAM) {
+                if (matriz[i][j] == 1 && tabuleiro[tLinha][tColuna] == AGUA) {
+                    tabuleiro[tLinha][tColuna] = AFETADO;
+                }
+            }
+        }
     }
+}
 
-    // Exibir o tabuleiro
-    printf("Tabuleiro Batalha Naval (0 = água, 3 = navio):\n\n");
-
+// Imprime o tabuleiro com representação
+void imprimirTabuleiro(int tabuleiro[TAM][TAM]) {
+    printf("\nTabuleiro:\n");
     for (int i = 0; i < TAM; i++) {
         for (int j = 0; j < TAM; j++) {
-            printf("%d ", tabuleiro[i][j]);
+            if (tabuleiro[i][j] == AGUA)
+                printf("~ ");  // Água
+            else if (tabuleiro[i][j] == NAVIO)
+                printf("N ");  // Navio
+            else if (tabuleiro[i][j] == AFETADO)
+                printf("* ");  // Área afetada
         }
         printf("\n");
     }
+}
+
+int main() {
+    int tabuleiro[TAM][TAM];
+    int cone[H][H], cruz[H][H], octaedro[H][H];
+
+    inicializarTabuleiro(tabuleiro);
+    posicionarNavios(tabuleiro);
+
+    construirCone(cone);
+    construirCruz(cruz);
+    construirOctaedro(octaedro);
+
+    // Aplica as habilidades com pontos de origem definidos
+    aplicarHabilidade(tabuleiro, cone, 4, 4);
+    aplicarHabilidade(tabuleiro, cruz, 6, 2);
+    aplicarHabilidade(tabuleiro, octaedro, 7, 7);
+
+    imprimirTabuleiro(tabuleiro);
 
     return 0;
 }
